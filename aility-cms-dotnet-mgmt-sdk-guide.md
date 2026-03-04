@@ -351,143 +351,78 @@ The Management SDK can **create, update, and delete** content. That's powerful a
 
 **Never use your management Bearer token in a public website or mobile app.** Keep it in environment variables or a secrets manager.
 
-### Step 1: Authorization Request
+### Step 1: Initiate the authorization flow by making a GET request to the authorization endpoint:
 
-First, initiate the authorization flow by redirecting the user to the authorization endpoint. You can implement this in your .NET application:
+```javascript
+const authUrl = 'https://mgmt.aglty.io/oauth/authorize';
 
-```csharp
-using System;
-using System.Web;
+//if you wish to implement offline access using refresh tokens, use this URL (enables refresh tokens)
+//const authUrl = 'https://mgmt.aglty.io/oauth/authorize?scope=offline-access '; 
 
-public class AuthService 
-{
-    private const string AuthUrl = "https://mgmt.aglty.io/oauth/authorize";
-    private const string TokenUrl = "https://mgmt.aglty.io/oauth/token";
-    
-    public string GetAuthorizationUrl(string redirectUri, string state)
-    {
-        var queryParams = HttpUtility.ParseQueryString(string.Empty);
-        queryParams["response_type"] = "code";
-        queryParams["redirect_uri"] = redirectUri;
-        queryParams["state"] = state;
-        queryParams["scope"] = "openid profile email offline_access";
-        
-        return $"{AuthUrl}?{queryParams}";
-    }
-}
+const params = new URLSearchParams({
+  response_type: 'code',
+  redirect_uri: 'YOUR_REDIRECT_URI',
+  state: 'YOUR_STATE',
+  scope: 'openid profile email offline_access'
+});
 
-// Usage: Redirect user to authorization URL
-var authService = new AuthService();
-var redirectUri = "YOUR_REDIRECT_URI"; // e.g., "https://yourapp.com/callback"
-var state = "YOUR_STATE"; // Generate a unique state value for security
-var authUrl = authService.GetAuthorizationUrl(redirectUri, state);
-
-// Redirect user to authUrl (implementation depends on your application type)
+// Redirect the user to the authorization URL
+window.location.href = `${authUrl}?${params.toString()}`;
 ```
 
-#### Step 2: Exchange Authorization Code for Access Token
 
-After successful authentication, you'll receive an authorization code at your redirect URI. Use this code to obtain an access token:
+#### Step 2: After successful authentication, you'll receive an authorization code at your redirect URI. Use this code to obtain an access token:
 
-```csharp
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+```javascript
+const response = await fetch('https://mgmt.aglty.io/oauth/token', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  },
+  body: new URLSearchParams({
+    code: 'YOUR_AUTHORIZATION_CODE'
+  })
+});
 
-public class TokenResponse
-{
-    public string access_token { get; set; }
-    public string refresh_token { get; set; }
-    public int expires_in { get; set; }
-    public string token_type { get; set; }
-}
-
-public async Task<TokenResponse> ExchangeCodeForTokenAsync(string authorizationCode)
-{
-    using var httpClient = new HttpClient();
-    
-    var requestBody = new List<KeyValuePair<string, string>>
-    {
-        new("code", authorizationCode),
-        new("grant_type", "authorization_code")
-    };
-    
-    var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl)
-    {
-        Content = new FormUrlEncodedContent(requestBody)
-    };
-    
-    var response = await httpClient.SendAsync(request);
-    var responseContent = await response.Content.ReadAsStringAsync();
-    
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException($"Token request failed: {responseContent}");
-    }
-    
-    return JsonConvert.DeserializeObject<TokenResponse>(responseContent);
-}
-
-// Usage: Exchange authorization code for tokens
-var tokenResponse = await ExchangeCodeForTokenAsync("YOUR_AUTHORIZATION_CODE");
-var accessToken = tokenResponse.access_token;
+const { access_token, refresh_token, expires_in } = await response.json();
 ```
 
-#### Step 3: Refresh Token (Optional)
+#### Step 3: When the access token expires, use the refresh token to obtain a new access token:
 
-If you included `offline_access` in the scope, you can use the refresh token to obtain new access tokens:
+```javascript
+const response = await fetch('https://mgmt.aglty.io/oauth/refresh', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    refresh_token: 'YOUR_REFRESH_TOKEN'
+  })
+});
 
-```csharp
-public async Task<TokenResponse> RefreshTokenAsync(string refreshToken)
-{
-    using var httpClient = new HttpClient();
-    
-    var requestBody = new List<KeyValuePair<string, string>>
-    {
-        new("refresh_token", refreshToken),
-        new("grant_type", "refresh_token")
-    };
-    
-    var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl)
-    {
-        Content = new FormUrlEncodedContent(requestBody)
-    };
-    
-    var response = await httpClient.SendAsync(request);
-    var responseContent = await response.Content.ReadAsStringAsync();
-    
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException($"Token refresh failed: {responseContent}");
-    }
-    
-    return JsonConvert.DeserializeObject<TokenResponse>(responseContent);
-}
+const { access_token, refresh_token, expires_in } = await response.json();
 ```
 
-#### Step 4: Initialize the SDK
+#### Step 4: Use the obtained token to initialize the SDK:
 
-Use the obtained access token to initialize the SDK:
+```javascript
+import * as mgmtApi from "@agility/management-sdk";
 
-```csharp
-using management.api.sdk;
+// Initialize the Options Class with your authentication token
+let options = new mgmtApi.Options();
+options.token = access_token; // Use the token obtained from authentication
 
-// Initialize the Options Class with your obtained token
-var options = new agility.models.Options
-{
-    token = accessToken, // Use the access_token from Step 2
-    locale = "en-us",    // Your website locale
-    guid = "your-website-guid" // Your website GUID
-};
+// Initialize the APIClient Class
+let apiClient = new mgmtApi.ApiClient(options);
 
-// Initialize the Client instance Class
-var clientInstance = new ClientInstance(options);
+let guid = "<<Provide the Guid of the Website>>";
+let locale = "<<Provide the locale of the Website>>"; // Example: en-us
+
+// Now you can make authenticated requests
+var contentItem = await apiClient.contentMethods.getContentItem(22, guid, locale);
+console.log(JSON.stringify(contentItem));
 ```
 
----
 
 ### Authentication with Personal Access Tokens (PAT)
 
