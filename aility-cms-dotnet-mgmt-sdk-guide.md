@@ -351,100 +351,214 @@ The Management SDK can **create, update, and delete** content. That's powerful a
 
 **Never use your management Bearer token in a public website or mobile app.** Keep it in environment variables or a secrets manager.
 
-### Step 1: Create the Options Object
+### Step 1: Authorization Request
+
+First, initiate the authorization flow by redirecting the user to the authorization endpoint. You can implement this in your .NET application:
 
 ```csharp
-using management.api.sdk;
-using agility.models;
+using System;
+using System.Web;
 
-// Create and configure the options
-Options options = new Options();
-options.token  = "<<YOUR BEARER TOKEN>>";  // From OAuth login
-options.locale = "en-us";                  // Your instance's locale
-options.guid   = "<<YOUR INSTANCE GUID>>"; // From Agility CMS Settings
-```
-
-### Step 2: Create the ClientInstance
-
-```csharp
-// Create the client — this is your main interface to the SDK
-ClientInstance clientInstance = new ClientInstance(options);
-```
-
-That's it! `clientInstance` now has access to all method groups.
-
-### Step 3: Getting a Bearer Token
-
-The Management SDK uses **OAuth 2.0** for authentication. Here is the flow:
-
-#### Manual Token (For Testing / CI/CD)
-
-For CI/CD pipelines or automated scripts, generate a long-lived token from your Agility CMS dashboard:
-
-1. Log in to `app.agilitycms.com`
-2. Go to **Settings → API Keys**
-3. Generate a Management API token
-4. Store it in an environment variable:
-
-```csharp
-// Always use environment variables — never hardcode tokens
-options.token = Environment.GetEnvironmentVariable("AGILITY_MANAGEMENT_TOKEN");
-options.guid  = Environment.GetEnvironmentVariable("AGILITY_GUID");
-```
-
-#### OAuth 2.0 Flow (For Production Apps)
-
-For apps where users log in with their Agility credentials:
-
-```csharp
-// Step 1: Build the authorization URL
-string authUrl = "https://mgmt.aglty.io/oauth/authorize";
-string redirectUri = "https://your-app.com/callback";
-
-// Step 2: Redirect user to Agility login
-// After login, Agility sends back an authorization code to your redirect URI
-
-// Step 3: Exchange the authorization code for a Bearer token
-// POST https://mgmt.aglty.io/oauth/token
-// Body: { code: "AUTHORIZATION_CODE" }
-// Response: { access_token, refresh_token, expires_in }
-
-// Step 4: Use the access_token
-options.token = accessToken;
-```
-
-#### Refreshing Tokens
-
-Bearer tokens expire. Use the refresh token to get a new one without re-authenticating:
-
-```csharp
-// When your token expires, call the refresh endpoint:
-// POST https://mgmt.aglty.io/oauth/refresh
-// Body: { refresh_token: "YOUR_REFRESH_TOKEN" }
-// Response: { access_token, refresh_token, expires_in }
-```
-
-### Complete Initialization Example
-
-```csharp
-using management.api.sdk;
-using agility.models;
-
-// Configure from environment variables (best practice)
-Options options = new Options
+public class AuthService 
 {
-    token  = Environment.GetEnvironmentVariable("AGILITY_MANAGEMENT_TOKEN"),
-    locale = "en-us",
-    guid   = Environment.GetEnvironmentVariable("AGILITY_GUID")
+    private const string AuthUrl = "https://mgmt.aglty.io/oauth/authorize";
+    private const string TokenUrl = "https://mgmt.aglty.io/oauth/token";
+    
+    public string GetAuthorizationUrl(string redirectUri, string state)
+    {
+        var queryParams = HttpUtility.ParseQueryString(string.Empty);
+        queryParams["response_type"] = "code";
+        queryParams["redirect_uri"] = redirectUri;
+        queryParams["state"] = state;
+        queryParams["scope"] = "openid profile email offline_access";
+        
+        return $"{AuthUrl}?{queryParams}";
+    }
+}
+
+// Usage: Redirect user to authorization URL
+var authService = new AuthService();
+var redirectUri = "YOUR_REDIRECT_URI"; // e.g., "https://yourapp.com/callback"
+var state = "YOUR_STATE"; // Generate a unique state value for security
+var authUrl = authService.GetAuthorizationUrl(redirectUri, state);
+
+// Redirect user to authUrl (implementation depends on your application type)
+```
+
+#### Step 2: Exchange Authorization Code for Access Token
+
+After successful authentication, you'll receive an authorization code at your redirect URI. Use this code to obtain an access token:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+public class TokenResponse
+{
+    public string access_token { get; set; }
+    public string refresh_token { get; set; }
+    public int expires_in { get; set; }
+    public string token_type { get; set; }
+}
+
+public async Task<TokenResponse> ExchangeCodeForTokenAsync(string authorizationCode)
+{
+    using var httpClient = new HttpClient();
+    
+    var requestBody = new List<KeyValuePair<string, string>>
+    {
+        new("code", authorizationCode),
+        new("grant_type", "authorization_code")
+    };
+    
+    var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl)
+    {
+        Content = new FormUrlEncodedContent(requestBody)
+    };
+    
+    var response = await httpClient.SendAsync(request);
+    var responseContent = await response.Content.ReadAsStringAsync();
+    
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException($"Token request failed: {responseContent}");
+    }
+    
+    return JsonConvert.DeserializeObject<TokenResponse>(responseContent);
+}
+
+// Usage: Exchange authorization code for tokens
+var tokenResponse = await ExchangeCodeForTokenAsync("YOUR_AUTHORIZATION_CODE");
+var accessToken = tokenResponse.access_token;
+```
+
+#### Step 3: Refresh Token (Optional)
+
+If you included `offline_access` in the scope, you can use the refresh token to obtain new access tokens:
+
+```csharp
+public async Task<TokenResponse> RefreshTokenAsync(string refreshToken)
+{
+    using var httpClient = new HttpClient();
+    
+    var requestBody = new List<KeyValuePair<string, string>>
+    {
+        new("refresh_token", refreshToken),
+        new("grant_type", "refresh_token")
+    };
+    
+    var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl)
+    {
+        Content = new FormUrlEncodedContent(requestBody)
+    };
+    
+    var response = await httpClient.SendAsync(request);
+    var responseContent = await response.Content.ReadAsStringAsync();
+    
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException($"Token refresh failed: {responseContent}");
+    }
+    
+    return JsonConvert.DeserializeObject<TokenResponse>(responseContent);
+}
+```
+
+#### Step 4: Initialize the SDK
+
+Use the obtained access token to initialize the SDK:
+
+```csharp
+using management.api.sdk;
+
+// Initialize the Options Class with your obtained token
+var options = new agility.models.Options
+{
+    token = accessToken, // Use the access_token from Step 2
+    locale = "en-us",    // Your website locale
+    guid = "your-website-guid" // Your website GUID
 };
 
-// Create the client
-ClientInstance clientInstance = new ClientInstance(options);
-
-// Now you can use all method groups
-var locale = options.locale;
-var guid   = options.guid;
+// Initialize the Client instance Class
+var clientInstance = new ClientInstance(options);
 ```
+
+---
+
+### Authentication with Personal Access Tokens (PAT)
+
+Personal Access Tokens are an alternative to OAuth 2.0 for server-to-server and automation use cases. They skip the redirect flow — once generated, use the token directly without any OAuth steps.
+
+**When to use PAT instead of OAuth 2.0:**
+- CI/CD pipelines and automation scripts
+- Server-side applications without an interactive user session
+- Integration tooling where OAuth redirect flows aren't practical
+
+#### Step 1: Generate a Personal Access Token
+
+PATs are created via the Management API itself. You must first obtain an OAuth 2.0 access token (Steps 1–3 above), then call the token creation endpoint using the [Swagger docs](https://mgmt.aglty.io) for your region:
+
+| Region | Swagger URL |
+|---|---|
+| US (default) | `https://mgmt.aglty.io` |
+| Canada | `https://mgmt-ca.aglty.io` |
+| Europe | `https://mgmt-eu.aglty.io` |
+| Australia | `https://mgmt-aus.aglty.io` |
+| Dev | `https://mgmt-dev.aglty.io` |
+
+In Swagger, authenticate with your OAuth 2.0 access token, then call:
+
+```
+POST /api/v1/tokens/create
+```
+
+```json
+{
+  "name": "my-automation-token",
+  "expiryDate": "2028-01-01T00:00:00Z"
+}
+```
+
+> **Note:** Swagger defaults `expiryDate` to the current timestamp, which would make the token expire immediately. Update the year to a future date — tokens can be set up to 2 years from the creation date.
+
+The response includes the token value — **copy it immediately, it will not be shown again**.
+
+
+#### Step 2: Initialize the SDK
+
+Pass the PAT directly as the `token` value. No OAuth flow or token exchange is required.
+
+```csharp
+using management.api.sdk;
+
+var options = new agility.models.Options
+{
+    token = "YOUR_PERSONAL_ACCESS_TOKEN",
+    locale = "en-us",
+    guid = "your-website-guid"
+};
+
+var clientInstance = new ClientInstance(options);
+```
+
+The API automatically identifies PATs by their token signature and routes them through the appropriate authentication path. Your code does not need to specify the authentication type.
+
+#### PAT Restrictions
+
+PATs cannot access the following endpoints. Use OAuth 2.0 for these operations:
+
+| Restricted Operation | Endpoints |
+|---|---|
+| User management | `POST/PUT/PATCH/DELETE /api/v*/instance/*/users` |
+| Token management | `POST/PUT/DELETE/GET /api/v*/tokens/*` |
+| Admin operations | `POST/PUT/DELETE /api/v*/admin/*` |
+
+Requests to restricted endpoints with a PAT return `403 access_denied`.
+
 
 ---
 
