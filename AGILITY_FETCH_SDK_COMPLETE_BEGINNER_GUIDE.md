@@ -1,8 +1,8 @@
 # 🎓 Complete Beginner's Guide to Agility Content Fetch JS SDK
 
-**Author:** GitHub Copilot  
-**Created:** 2026-03-04  
-**Difficulty Level:** Beginner  
+**Author:** GitHub Copilot (expanded by Claude)
+**Created:** 2026-03-04 | **Updated:** 2026-03-04
+**Difficulty Level:** Beginner
 **Estimated Learning Time:** 10-14 days (1-2 hours per day)
 
 ---
@@ -19,6 +19,11 @@
 8. [Common Patterns](#part-8-common-patterns-youll-see)
 9. [Questions to Ask Yourself](#part-9-questions-to-ask-yourself-while-learning)
 10. [Quick Reference](#part-10-quick-reference---the-most-important-files)
+11. [Installation Methods](#part-11-installation-methods) ⭐ NEW
+12. [Contributing to the SDK](#part-12-contributing-to-the-sdk) ⭐ NEW
+13. [Content Webhooks](#part-13-content-webhooks) ⭐ NEW
+14. [Official Tutorials & Resources](#part-14-official-tutorials--resources) ⭐ NEW
+15. [SDK Versioning & Releases](#part-15-sdk-versioning--releases) ⭐ NEW
 
 ---
 
@@ -33,13 +38,15 @@ Your Web App → (Fetch SDK) → Agility CMS Server → Gets Content Data → Re
 ### Real-world Analogy
 
 If Agility CMS is a restaurant kitchen storing recipes and ingredients, this SDK is like a waiter who knows:
-- Exactly which kitchen door to knock on
-- What to ask for
-- How to bring the food back to your table in the right format
+
+* Exactly which kitchen door to knock on
+* What to ask for
+* How to bring the food back to your table in the right format
 
 ### What Problem Does It Solve?
 
 **Without SDK:** You'd have to:
+
 ```javascript
 // Manual approach - complicated!
 const response = await fetch('https://api.agilitycms.com/fetch/en-us/item/22', {
@@ -53,11 +60,29 @@ const data = await response.json()
 ```
 
 **With SDK:** Much simpler!
+
 ```javascript
 const api = agility.getApi({ guid: '...', apiKey: '...' })
 const item = await api.getContentItem({ contentID: 22, locale: 'en-us' })
 // Data is already typed and validated!
 ```
+
+### What This SDK Is NOT
+
+Understanding the boundaries of this SDK is just as important as knowing what it does:
+
+- **It is NOT a write/management SDK.** It can only READ content. If you need to create, update, or delete content programmatically, you'd use the separate `@agility/content-management` or `@agility/management-sdk` packages.
+- **It is NOT a sync SDK.** For caching content locally (e.g. to a database or filesystem), there is a dedicated `@agility/content-sync` package that builds on top of this one.
+- **It is NOT a CMS UI.** The CMS interface itself lives at `app.agilitycms.com` — this SDK only handles data retrieval.
+
+### Node.js vs. Browser
+
+One important feature of this SDK is that it works in **both environments**:
+
+- **Node.js** — server-side rendering (Next.js, Express, etc.)
+- **Browser** — client-side SPAs (React, Vue, plain HTML)
+
+This is intentional. The SDK handles environment detection internally, so the same code works in both places without changes.
 
 ---
 
@@ -87,15 +112,17 @@ agility-content-fetch-js-sdk/
 │       ├── ContentItem.ts
 │       ├── Config.ts
 │       ├── Client.ts
-│       ├─�� ContentZone.ts
+│       ├── ContentZone.ts
 │       ├── FilterOperator.ts
 │       └── ... (other types)
 ├── test/                         # Unit tests
+├── .github/workflows/            # CI/CD pipeline definitions ⭐ NEW
 ├── package.json                  # Dependencies & scripts
 ├── README.md                     # Official documentation
 ├── tsconfig.json                 # TypeScript configuration
 ├── jest.config.js                # Test configuration
-└── build.js                      # Build script
+├── build.js                      # Build script
+└── yarn.lock                     # Yarn dependency lock file ⭐ NEW
 ```
 
 ### Folder-by-Folder Breakdown
@@ -136,6 +163,7 @@ module.exports = {
 This is the most important file. Size: ~300 lines. Contains:
 
 **A) Default Configuration:**
+
 ```typescript
 const defaultConfig: Config = {
     baseUrl: null,
@@ -154,6 +182,7 @@ const defaultConfig: Config = {
 ```
 
 **B) The ApiClient Class:**
+
 ```typescript
 class ApiClient {
     config: Config;
@@ -186,6 +215,7 @@ class ApiClient {
 ```
 
 **C) The getApi() Function:**
+
 ```typescript
 export function getApi(config: Config) {
     validateConfigParams(config);
@@ -195,6 +225,7 @@ export function getApi(config: Config) {
 ```
 
 **How it works:**
+
 1. Takes your config (guid, apiKey, etc.)
 2. Validates it
 3. Creates and returns a new ApiClient instance
@@ -232,7 +263,6 @@ function getContentItem<T>(
     
     // STEP 1: Validate
     validateRequestParams(requestParams);
-    // Throws error if contentID or locale missing
     
     // STEP 2: Apply defaults
     requestParams = { ...defaultParams, ...requestParams };
@@ -313,12 +343,13 @@ export interface Page {
 ```
 
 **Key types include:**
-- `ContentItem.ts` - A piece of content
-- `Page.ts` - A web page
-- `ContentZone.ts` - Area on a page where content goes
-- `Gallery.ts` - Collection of images
-- `Config.ts` - Configuration options
-- `FilterOperator.ts` - How to filter results
+
+* `ContentItem.ts` - A piece of content
+* `Page.ts` - A web page
+* `ContentZone.ts` - Area on a page where content goes
+* `Gallery.ts` - Collection of images
+* `Config.ts` - Configuration options
+* `FilterOperator.ts` - How to filter results
 
 ---
 
@@ -359,6 +390,19 @@ function logError({ config, message }: LogProps) {
     console.error('\x1b[41m%s\x1b[0m', message);
 }
 ```
+
+---
+
+#### **6. `.github/workflows/` - CI/CD Pipelines** ⭐ NEW
+
+This folder contains GitHub Actions workflow files that automatically run tests whenever code is pushed or a pull request is opened. You'll often see build status badges in the README like this:
+
+```
+[![Build Status](https://agility.visualstudio.com/.../badge)](...)
+[![Netlify Status](https://api.netlify.com/.../badge)](...)
+```
+
+These badges show in real time whether the tests are passing and whether the docs site is deployed. As a beginner you don't need to modify these, but knowing they exist explains why the project is reliable — every change is automatically tested before it merges.
 
 ---
 
@@ -431,7 +475,7 @@ STEP 5: HTTP Request
 │     headers: { APIKey, Guid, ... }  │
 │   }                                 │
 │ )                                   │
-└────────────────┬──────────���─────────┘
+└────────────────┬────────────────────┘
                  │
                  ▼
 STEP 6: Server Response
@@ -524,6 +568,7 @@ export interface Config {
 ```
 
 **Example:**
+
 ```typescript
 const api = agility.getApi({
     guid: 'abc123',
@@ -536,7 +581,30 @@ const api = agility.getApi({
 })
 ```
 
-### 2. Request Parameters
+### 2. Live vs. Preview API
+
+One of the most important `Config` options is `isPreview`. This toggles which Agility endpoint the SDK calls:
+
+| `isPreview` | Endpoint used | Content returned |
+|---|---|---|
+| `false` (default) | `/fetch/...` | Published, live content only |
+| `true` | `/preview/...` | Draft + unpublished content |
+
+**When to use preview mode:**
+- During content editing workflows so editors can see unpublished changes
+- In a staging/preview deployment
+
+```typescript
+// Live site
+const liveApi = agility.getApi({ guid, apiKey, isPreview: false })
+
+// Preview site (for editors)
+const previewApi = agility.getApi({ guid, apiKey: previewApiKey, isPreview: true })
+```
+
+> ⚠️ **Security note:** Use a different `apiKey` for preview vs. live. Agility CMS provides separate API keys for each. Never expose your preview API key publicly.
+
+### 3. Request Parameters
 
 Each method takes specific parameters. Structure:
 
@@ -549,6 +617,7 @@ Each method takes specific parameters. Structure:
 ```
 
 **Example from `getContentItem`:**
+
 ```typescript
 await api.getContentItem({
     contentID: 22,                  // REQUIRED
@@ -559,12 +628,40 @@ await api.getContentItem({
 ```
 
 **What these mean:**
-- `contentID`: Which piece of content to get
-- `locale`: Which language/region (en-us, fr-ca, etc)
-- `contentLinkDepth`: How many levels deep to fetch linked content
-- `expandAllContentLinks`: Expand all references, even complex ones?
 
-### 3. Response Types
+* `contentID`: Which piece of content to get
+* `locale`: Which language/region (en-us, fr-ca, etc)
+* `contentLinkDepth`: How many levels deep to fetch linked content
+* `expandAllContentLinks`: Expand all references, even complex ones?
+
+### 4. Understanding `contentLinkDepth`
+
+This parameter deserves special attention because it directly affects performance and the shape of the data you receive.
+
+When Agility content items reference each other (e.g. a Blog Post references an Author content item), the SDK can automatically resolve those links for you.
+
+```typescript
+// contentLinkDepth: 0 → only the item itself, no linked items resolved
+// contentLinkDepth: 1 → resolves direct links (default, usually sufficient)
+// contentLinkDepth: 2 → resolves links-of-links
+// contentLinkDepth: 3+ → deep nesting, use sparingly — increases response time
+```
+
+**Example:**
+
+```typescript
+// Blog post links to an Author item
+const post = await api.getContentItem({
+    contentID: 22,
+    locale: 'en-us',
+    contentLinkDepth: 1  // default: Author object is resolved inline
+})
+
+// post.fields.author is now a full ContentItem object, not just an ID
+console.log(post.fields.author.fields.name)  // "Jane Doe"
+```
+
+### 5. Response Types
 
 Data comes back as TypeScript interfaces. You get autocomplete and type safety.
 
@@ -602,11 +699,12 @@ Promise<ContentItem<T>>
 }
 ```
 
-### 4. Error Handling
+### 6. Error Handling
 
 Errors happen at two stages:
 
 **Stage 1: Parameter Validation** (before API call)
+
 ```typescript
 // This throws immediately
 api.getContentItem({
@@ -618,6 +716,7 @@ api.getContentItem({
 ```
 
 **Stage 2: API Response** (after API call)
+
 ```typescript
 // API returns 404 - item doesn't exist
 // SDK logs info message and returns: undefined
@@ -629,7 +728,23 @@ api.getContentItem({
 // SDK logs error and throws exception
 ```
 
-### 5. Caching
+**Best practice — always wrap API calls in try/catch:**
+
+```typescript
+try {
+    const item = await api.getContentItem({ contentID: 22, locale: 'en-us' })
+    if (!item) {
+        console.warn('Item not found')
+        return null
+    }
+    return item
+} catch (error) {
+    console.error('Network or unexpected error:', error)
+    return null
+}
+```
+
+### 7. Caching
 
 Optional. Stores responses in memory.
 
@@ -652,6 +767,17 @@ await api.getContentItem({ contentID: 22, locale: 'en-us' })
 await api.getContentItem({ contentID: 22, locale: 'en-us' })
 ```
 
+**When should you use caching?**
+
+| Scenario | Recommended `maxAge` |
+|---|---|
+| Development / debugging | `0` (disabled) |
+| Static site generation | `0` (always fresh at build time) |
+| Server-side rendering (SSR) | `60000–180000` (1–3 min) |
+| Client-side SPA | `120000–300000` (2–5 min) |
+
+> Note: Caching is **in-memory only** — it resets whenever your server or browser tab restarts. For persistent caching across server restarts, consider the `@agility/content-sync` package.
+
 ---
 
 ## Part 5: Available Methods (What You Can Do)
@@ -659,7 +785,7 @@ await api.getContentItem({ contentID: 22, locale: 'en-us' })
 ### Overview Table
 
 | Method | Purpose | Returns | When to Use |
-|--------|---------|---------|------------|
+| --- | --- | --- | --- |
 | **getPage()** | Get a single page by ID | `Promise<Page>` | You know the page ID |
 | **getPageByPath()** | Get a page by URL path | `Promise<Page>` | You have the page path |
 | **getContentItem()** | Get a single content item | `Promise<ContentItem>` | You know the content ID |
@@ -808,16 +934,30 @@ const items = await api.getContentList({
 **Use when:** You want filtered, paginated lists
 
 **Filter operators:**
-- `eq` - equals
-- `ne` - not equals
-- `lt` - less than
-- `lte` - less than or equal
-- `gt` - greater than
-- `gte` - greater than or equal
-- `like` - contains (string)
-- `in` - matches any in list
-- `contains` - contains (for arrays)
-- `range` - between two values
+
+* `eq` - equals
+* `ne` - not equals
+* `lt` - less than
+* `lte` - less than or equal
+* `gt` - greater than
+* `gte` - greater than or equal
+* `like` - contains (string)
+* `in` - matches any in list
+* `contains` - contains (for arrays)
+* `range` - between two values
+
+**Pagination example:**
+
+```typescript
+// Page 1 (items 1-10)
+const page1 = await api.getContentList({ referenceName: 'posts', locale: 'en-us', take: 10, skip: 0 })
+
+// Page 2 (items 11-20)
+const page2 = await api.getContentList({ referenceName: 'posts', locale: 'en-us', take: 10, skip: 10 })
+
+// Total pages
+const totalPages = Math.ceil(page1.totalCount / 10)
+```
 
 ---
 
@@ -831,17 +971,20 @@ const sitemap = await api.getSitemapFlat({
 
 // Returns:
 {
-    pageID: 1,
-    items: {
-        '/': { pageID: 1, name: 'home', path: '/', ... },
-        '/about': { pageID: 2, name: 'about', path: '/about', ... },
-        '/contact': { pageID: 3, name: 'contact', path: '/contact', ... },
-        '/blog': { pageID: 4, name: 'blog', path: '/blog', ... }
-    }
+    '/': { pageID: 1, name: 'home', path: '/', ... },
+    '/about': { pageID: 2, name: 'about', path: '/about', ... },
+    '/contact': { pageID: 3, name: 'contact', path: '/contact', ... },
+    '/blog': { pageID: 4, name: 'blog', path: '/blog', ... }
 }
 ```
 
-**Use when:** You need page routing/navigation
+**Use when:** You need page routing/navigation or want to generate static paths in Next.js:
+
+```typescript
+// In Next.js getStaticPaths:
+const sitemap = await api.getSitemapFlat({ channelName: 'website', locale: 'en-us' })
+const paths = Object.keys(sitemap).map(path => ({ params: { slug: path.split('/').filter(Boolean) } }))
+```
 
 ---
 
@@ -870,12 +1013,6 @@ const sitemap = await api.getSitemapNested({
                 pageID: 10,
                 path: '/blog/post-1',
                 title: 'My First Post',
-                children: []
-            },
-            {
-                pageID: 11,
-                path: '/blog/post-2',
-                title: 'My Second Post',
                 children: []
             }
         ]
@@ -912,8 +1049,7 @@ const gallery = await api.getGallery({
                 pixelHeight: '1080',
                 pixelWidth: '1920'
             }
-        },
-        // ... more images
+        }
     ]
 }
 ```
@@ -933,16 +1069,10 @@ let syncResponse = await api.getSyncContent({
 })
 
 // Get changed items
-console.log(syncResponse.items)  // Array of changed items
-console.log(syncResponse.syncToken)  // Token for next call
+console.log(syncResponse.items)       // Array of changed items
+console.log(syncResponse.syncToken)   // Token for next call
 
-// Continue syncing
-syncResponse = await api.getSyncContent({
-    syncToken: syncResponse.syncToken,  // Use returned token
-    locale: 'en-us'
-})
-
-// Loop until syncToken is empty (you're caught up)
+// Continue syncing until caught up
 while (syncResponse.syncToken) {
     syncResponse = await api.getSyncContent({
         syncToken: syncResponse.syncToken,
@@ -965,10 +1095,13 @@ let syncResponse = await api.getSyncPages({
     locale: 'en-us'
 })
 
-// Keep calling with returned syncToken until it's empty
+while (syncResponse.syncToken) {
+    syncResponse = await api.getSyncPages({
+        syncToken: syncResponse.syncToken,
+        locale: 'en-us'
+    })
+}
 ```
-
-**Use when:** You sync pages separately
 
 ---
 
@@ -989,151 +1122,91 @@ const redirects = await api.getUrlRedirections({
 }
 ```
 
-**Use when:** You need to handle redirects
+**Use when:** You need to handle redirects (e.g. in a Next.js middleware or Express route)
 
 ---
 
 ## Part 6: Learning Plan (Step by Step)
 
 ### Phase 1: Foundation (Days 1-2)
+
 **Goal:** Understand the basics
 **Time:** 2-3 hours total
 
 **Tasks:**
-- [ ] Read the README.md in the repo
-- [ ] Understand what Agility CMS is (headless content management)
-- [ ] Understand what "fetch API" means (retrieve/read content)
-- [ ] Set up the SDK in a test project
-  ```bash
-  npm install @agility/content-fetch
-  ```
-- [ ] Create your first API client:
-  ```javascript
-  import agility from '@agility/content-fetch'
-  const api = agility.getApi({
-      guid: 'your-guid',
-      apiKey: 'your-api-key'
-  })
-  ```
+
+* Read the README.md in the repo
+* Understand what Agility CMS is (headless content management)
+* Understand what "fetch API" means (retrieve/read content)
+* Set up the SDK in a test project (see Part 11 for install options)
+* Create your first API client:
+
+```typescript
+import agility from '@agility/content-fetch'
+const api = agility.getApi({
+    guid: 'your-guid',
+    apiKey: 'your-api-key'
+})
+```
 
 **Resources:**
-- Official README: https://github.com/agility/agility-content-fetch-js-sdk
-- Agility docs: https://help.agilitycms.com/hc/en-us
-- About Headless CMS: https://www.agilitycms.com/resources/agility-headless-cms
+
+* Official README: https://github.com/agility/agility-content-fetch-js-sdk
+* Agility docs: https://help.agilitycms.com/hc/en-us
+* About Headless CMS: https://www.agilitycms.com/resources/agility-headless-cms
 
 **Self-Check:**
-- Can you explain what the SDK does in one sentence?
-- Can you set up the SDK with your credentials?
+
+* Can you explain what the SDK does in one sentence?
+* Can you set up the SDK with your credentials?
 
 ---
 
 ### Phase 2: Core Files (Days 3-4)
+
 **Goal:** Understand code structure
 **Time:** 2-3 hours
 
 **Read these files in order:**
 
-1. **`src/index.ts`** (5 min)
-   - Question: Why is this file so small?
-   - Answer: Hides complexity, exports one function
-
-2. **`src/types/Config.ts`** (10 min)
-   - Question: What configuration options are required?
-   - Answer: guid and apiKey
-
-3. **`src/api-client.ts`** (20 min)
-   - Focus on lines 1-76 first (getApi function)
-   - Then read lines 135-160 (method definitions)
-   - Don't worry about makeRequest yet
-
-4. **`src/utils.ts`** (15 min)
-   - Question: What does buildAuthHeader do?
-   - Question: What does buildRequestUrlPath do?
-
-**Exercise:**
-Draw a diagram showing:
-- How index.ts connects to api-client.ts
-- How api-client.ts uses utils.ts
-- What methods are available on ApiClient
+1. **`src/index.ts`** (5 min) — Why is this file so small? Answer: Hides complexity, exports one function
+2. **`src/types/Config.ts`** (10 min) — What configuration options are required? Answer: guid and apiKey
+3. **`src/api-client.ts`** (20 min) — Focus on lines 1–76 first (getApi function), then lines 135–160 (method definitions). Don't worry about makeRequest yet.
+4. **`src/utils.ts`** (15 min) — What does buildAuthHeader do? What does buildRequestUrlPath do?
 
 **Self-Check:**
-- Can you explain what getApi() does?
-- Can you explain what makeRequest() is?
-- Can you explain what buildAuthHeader() does?
+
+* Can you explain what getApi() does?
+* Can you explain what makeRequest() is?
+* Can you explain what buildAuthHeader() does?
 
 ---
 
 ### Phase 3: Methods (Days 5-7)
+
 **Goal:** Understand how to fetch data
 **Time:** 3-4 hours
 
 **Pick these methods in order:**
 
-1. **`methods/getContentItem.ts`** (10 min)
-   - Simplest method
-   - Focus on: validate → build → request
+1. `methods/getContentItem.ts` — Simplest method, focus on validate → build → request
+2. `methods/getPage.ts` — Similar to getContentItem, different endpoint
+3. `methods/getContentList.ts` — More complex, has filtering: new concepts include skip, take, sort, filters
+4. `methods/getSitemapFlat.ts` — Different use case, simpler parameters
 
-2. **`methods/getPage.ts`** (10 min)
-   - Similar to getContentItem
-   - Different endpoint
-
-3. **`methods/getContentList.ts`** (15 min)
-   - More complex - has filtering
-   - New concepts: skip, take, sort, filters
-
-4. **`methods/getSitemapFlat.ts`** (10 min)
-   - Different use case
-   - Simpler parameters
-
-**For each method ask yourself:**
-- What parameters does it take?
-- What does it validate?
-- What URL does it build?
-- What does it return?
-
-**Exercise:**
-Write pseudocode for a new method `getAuthorBio()` that:
-- Takes authorID (required)
-- Takes locale (required)
-- Validates both
-- Builds URL: `/author/${authorID}`
-- Returns a Promise
-
-**Self-Check:**
-- Can you explain the flow of getContentItem?
-- Can you explain what validation does?
-- Can you explain what parameters mean?
+**For each method ask yourself:** What parameters does it take? What does it validate? What URL does it build? What does it return?
 
 ---
 
 ### Phase 4: Type System (Days 8-9)
+
 **Goal:** Understand data structures
 **Time:** 2-3 hours
 
-**Study these type files:**
+**Study these type files in order:** `Config.ts` → `ContentItem.ts` → `Page.ts` → `ContentZone.ts` → `FilterOperator.ts`
 
-1. **`types/Config.ts`** (10 min)
-   - Already read, reinforce
+**Exercise:** Create a TypeScript interface for your own content type and use it:
 
-2. **`types/ContentItem.ts`** (10 min)
-   - Question: What does `<T = { [key: string]: any }>` mean?
-   - Answer: Generic type for custom fields
-
-3. **`types/Page.ts`** (15 min)
-   - Focus on zones property
-   - Question: What are zones?
-   - Answer: Areas on page where content goes
-
-4. **`types/ContentZone.ts`** (10 min)
-   - Question: What's the difference between ContentItem and ContentZone?
-   - Answer: Zone is placement of item on page
-
-5. **`types/FilterOperator.ts`** (10 min)
-   - Question: What operators are available?
-   - Answer: eq, ne, lt, gt, lte, gte, like, in, contains, range
-
-**Exercise:**
-Create a TypeScript interface for your own content type:
 ```typescript
 interface BlogPost {
     title: string;
@@ -1141,12 +1214,8 @@ interface BlogPost {
     author: string;
     publishDate: Date;
     tags: string[];
-    // ... add 5 more fields
 }
-```
 
-Then use it:
-```typescript
 const post = await api.getContentItem<BlogPost>({
     contentID: 22,
     locale: 'en-us'
@@ -1156,87 +1225,25 @@ console.log(post.fields.title)  // TypeScript knows it's a string!
 console.log(post.fields.tags)   // TypeScript knows it's string[]!
 ```
 
-**Self-Check:**
-- Can you explain what a ContentZone is?
-- Can you explain generics (`<T>`)?
-- Can you explain the difference between ContentItem and Page?
-
 ---
 
 ### Phase 5: Hands-On Practice (Days 10+)
+
 **Goal:** Use the SDK in a real project
 **Time:** 5-10 hours
 
-**Build a simple React/Next.js app:**
-
-```typescript
-// 1. Initialize API
-import agility from '@agility/content-fetch'
-
-const api = agility.getApi({
-    guid: process.env.REACT_APP_GUID,
-    apiKey: process.env.REACT_APP_API_KEY
-})
-
-// 2. Fetch single content item
-export async function getPost(postId: number) {
-    return api.getContentItem({
-        contentID: postId,
-        locale: 'en-us'
-    })
-}
-
-// 3. Fetch list with filtering
-export async function getPosts(page: number = 1) {
-    return api.getContentList({
-        referenceName: 'blog_posts',
-        locale: 'en-us',
-        take: 10,
-        skip: (page - 1) * 10,
-        sort: 'properties.modified',
-        direction: 'DESC'
-    })
-}
-
-// 4. Fetch page with zones
-export async function getHomePage() {
-    return api.getPageByPath({
-        pagePath: '/',
-        channelName: 'website',
-        locale: 'en-us'
-    })
-}
-
-// 5. Display in React
-function HomePage({ page }) {
-    return (
-        <div>
-            <h1>{page.title}</h1>
-            {page.zones.hero.map(zone => (
-                <div key={zone.item.contentID}>
-                    {zone.item.fields.title}
-                </div>
-            ))}
-        </div>
-    )
-}
-```
-
 **Milestones:**
-- ✅ Create API client
-- ✅ Fetch single content item
-- ✅ Fetch list of items
-- ✅ Filter the list (by status, author, etc)
-- ✅ Get a page with its zones
-- ✅ Display all data in UI
-- ✅ Add loading states
-- ✅ Add error handling
 
-**Self-Check:**
-- Can you fetch data successfully?
-- Can you display data in React?
-- Can you filter/paginate?
-- Can you handle errors?
+* ✅ Create API client
+* ✅ Fetch single content item
+* ✅ Fetch list of items
+* ✅ Filter the list (by status, author, etc)
+* ✅ Get a page with its zones
+* ✅ Display all data in UI
+* ✅ Add loading states
+* ✅ Add error handling
+* ✅ Implement pagination (skip / take)
+* ✅ Try preview mode (`isPreview: true`)
 
 ---
 
@@ -1245,7 +1252,7 @@ function HomePage({ page }) {
 ### Priority 1 - MUST READ (2-3 hours total)
 
 | File | Time | Why Important | Key Concept |
-|------|------|---------------|------------|
+| --- | --- | --- | --- |
 | `README.md` | 10 min | Overview | What the SDK is |
 | `src/index.ts` | 5 min | Entry point | Only exports getApi() |
 | `src/api-client.ts` (lines 1-76) | 20 min | Initialization | How getApi() works |
@@ -1253,12 +1260,10 @@ function HomePage({ page }) {
 | `src/types/Config.ts` | 10 min | Configuration | What to pass to getApi() |
 | `src/methods/getContentItem.ts` | 10 min | Simple example | How methods work |
 
-**Total: ~70 minutes**
-
 ### Priority 2 - IMPORTANT (2-3 hours total)
 
 | File | Time | Why Important | Key Concept |
-|------|------|---------------|------------|
+| --- | --- | --- | --- |
 | `src/methods/getPage.ts` | 10 min | Page fetching | Similar pattern |
 | `src/methods/getContentList.ts` | 15 min | Filtering | Most complex |
 | `src/utils.ts` | 15 min | Helpers | URL & header building |
@@ -1266,20 +1271,17 @@ function HomePage({ page }) {
 | `src/types/ContentItem.ts` | 10 min | Item structure | Generic types |
 | `src/types/ContentZone.ts` | 5 min | Zone structure | Content placement |
 
-**Total: ~65 minutes**
-
 ### Priority 3 - REFERENCE (1-2 hours total)
 
 | File | Time | When Needed |
-|------|------|-------------|
+| --- | --- | --- |
 | `src/methods/getSitemapFlat.ts` | 5 min | Building routing |
 | `src/methods/getSitemapNested.ts` | 5 min | Building menus |
 | `src/methods/getGallery.ts` | 5 min | Displaying media |
 | `src/methods/getSyncContent.ts` | 10 min | Syncing content |
 | `src/types/FilterOperator.ts` | 5 min | Advanced filtering |
 | `src/types/Client.ts` | 5 min | Type definitions |
-
-**Total: ~35 minutes**
+| `test/` folder | 15 min | See how the SDK is tested |
 
 ---
 
@@ -1297,33 +1299,17 @@ export interface SomethingRequestParams {
 }
 
 // 2. Define default values
-const defaultParams = {
-    optionalParam: 10
-}
+const defaultParams = { optionalParam: 10 }
 
 // 3. Implement the method
 function getSomething(
     this: ApiClientInstance,
     requestParams: SomethingRequestParams
 ): Promise<Something> {
-    
-    // STEP A: Validate
-    validateRequestParams(requestParams);
-    
-    // STEP B: Apply defaults
-    requestParams = { ...defaultParams, ...requestParams };
-    
-    // STEP C: Build request
-    const req = {
-        url: `...`,
-        method: 'get',
-        baseURL: buildRequestUrlPath(...),
-        headers: buildAuthHeader(...),
-        params: {}
-    };
-    
-    // STEP D: Make request
-    return this.makeRequest(req);
+    validateRequestParams(requestParams);              // STEP A
+    requestParams = { ...defaultParams, ...requestParams }; // STEP B
+    const req = { url: `...`, method: 'get', ... };   // STEP C
+    return this.makeRequest(req);                      // STEP D
 }
 
 // 4. Validation function
@@ -1333,78 +1319,32 @@ function validateRequestParams(requestParams) {
     }
 }
 
-// 5. Export
 export default getSomething;
 ```
 
-**This repeats for every method.** Understanding one method = understanding all of them!
-
----
-
 ### Pattern 2: Parameters Build the URL
 
-Every API request follows this URL structure:
-
 ```
-Base + Endpoint + Query String
-
-Examples:
-https://api.agilitycms.com/fetch/en-us/item/22?contentLinkDepth=1&expandAllContentLinks=false
-                        │      │      │   │                    └─ contentLinkDepth param
-                        │      │      │   └────── contentID param
-                        │      │      └────────── locale parameter
-                        │      └────────────────── fetch (not preview)
-                        └────────────────────────── baseUrl
-
-https://api.agilitycms.com/fetch/en-us/page/1?contentLinkDepth=2&expandAllContentLinks=true
-https://api.agilitycms.com/fetch/en-us/contentlist/blog_posts?take=10&skip=0&sort=properties.modified
-https://api.agilitycms.com/fetch/en-us/sitemap/flat/website
+https://api.agilitycms.com/fetch/en-us/item/22?contentLinkDepth=1
+                        │      │      │   │
+                        │      │      │   └── contentID
+                        │      │      └────── locale
+                        │      └────────────── 'fetch' or 'preview'
+                        └───────────────────── baseUrl
 ```
-
-**How it's built:**
-```typescript
-// Method receives parameters
-{ contentID: 22, locale: 'en-us' }
-
-// buildRequestUrlPath() creates base
-baseURL = 'https://api.agilitycms.com/fetch/en-us'
-
-// Method creates endpoint
-url = '/item/22?contentLinkDepth=1&...'
-
-// Combined in makeRequest():
-fullUrl = baseURL + url
-        = 'https://api.agilitycms.com/fetch/en-us/item/22?...'
-```
-
----
 
 ### Pattern 3: Promises for Async Operations
 
-All methods return Promises. Use either style:
-
 ```typescript
-// Style 1: .then/.catch
-api.getContentItem({ contentID: 22, locale: 'en-us' })
-    .then(item => {
-        console.log(item);
-    })
-    .catch(error => {
-        console.error(error);
-    })
-
-// Style 2: async/await (cleaner!)
+// async/await (recommended)
 try {
-    const item = await api.getContentItem({
-        contentID: 22,
-        locale: 'en-us'
-    })
-    console.log(item);
+    const item = await api.getContentItem({ contentID: 22, locale: 'en-us' })
+    console.log(item)
 } catch (error) {
-    console.error(error);
+    console.error(error)
 }
 
-// Style 3: Promise.all (multiple requests)
+// Promise.all — fetch multiple items in parallel (much faster than sequential)
 const [item1, item2, item3] = await Promise.all([
     api.getContentItem({ contentID: 1, locale: 'en-us' }),
     api.getContentItem({ contentID: 2, locale: 'en-us' }),
@@ -1412,554 +1352,557 @@ const [item1, item2, item3] = await Promise.all([
 ])
 ```
 
----
-
 ### Pattern 4: Validation Happens First
 
-Every method validates BEFORE making API call:
-
-```typescript
-// BAD: Would make API request and fail
-api.getContentItem({
-    locale: 'en-us'
-    // Missing contentID!
-})
-
-// GOOD: Fails immediately with clear error
-// Error: "You must include a contentID number in your request params."
-
-// WHY: Validation prevents wasted API calls
-// Benefits:
-// - Faster feedback
-// - Clearer error messages
-// - Saves API quota
-```
-
----
+Every method validates BEFORE making an API call — fast failure with clear messages, not wasted network requests.
 
 ### Pattern 5: Configuration is Stored in Instance
 
-```typescript
-// Configuration is set once
-const api = agility.getApi({
-    guid: 'abc123',
-    apiKey: 'secret',
-    logLevel: 'warn',
-    caching: { maxAge: 180000 }
-})
-
-// All methods reuse same config
-api.getContentItem({...})  // Uses config
-api.getContentList({...})  // Uses config
-api.getPage({...})         // Uses config
-
-// No need to pass config to each method
-```
-
----
+Set once in `getApi()`, reused across all method calls automatically.
 
 ### Pattern 6: Error Handling is Gentle
 
-```typescript
-// 404 Not Found
-const item = await api.getContentItem({
-    contentID: 999,  // doesn't exist
-    locale: 'en-us'
-})
-console.log(item)  // undefined (not an error)
-
-// 500 Server Error
-const item = await api.getContentItem({...})
-// Logs error, returns undefined
-
-// Network Error
-const item = await api.getContentItem({...})
-// Throws exception (not caught internally)
-
-// Parameter Error
-try {
-    const item = await api.getContentItem({
-        // Missing locale
-    })
-} catch (e) {
-    console.log(e.message)  // "You must include a locale..."
-}
-```
+404s return `undefined`. Server errors log a message and return `undefined`. Only network failures throw. This means you should always check for `undefined` before using a result.
 
 ---
 
 ## Part 9: Questions to Ask Yourself While Learning
 
-As you read the code, ask these questions:
-
 ### About getApi()
-- [ ] What does getApi() do?
-- [ ] What does it return?
-- [ ] What happens to the config object?
-- [ ] Why validate the config immediately?
-- [ ] What happens if you don't provide guid or apiKey?
+* What does getApi() return?
+* What happens if you don't provide guid or apiKey?
+* Can you call getApi() multiple times with different configs?
 
 ### About Methods
-- [ ] Why does every method start with validation?
-- [ ] What's the purpose of defaultParams?
-- [ ] How does the URL get built?
-- [ ] What are baseURL and url and why are they separate?
-- [ ] Why do methods use `this.makeRequest()`?
+* Why does every method start with validation?
+* What's the purpose of defaultParams?
+* How does the URL get built from parameters?
+* Why do methods use `this.makeRequest()`?
 
 ### About Configuration
-- [ ] What's the difference between baseUrl and apiKey?
-- [ ] When would you use isPreview=true?
-- [ ] What does logLevel control?
-- [ ] How does caching work?
-- [ ] Why is guid sometimes in headers and sometimes not?
+* What's the difference between `isPreview: false` and `isPreview: true`?
+* What does `logLevel: 'silent'` do?
+* When would you set `requiresGuidInHeaders: true`?
+* What happens if `maxAge` is set to 0?
 
 ### About Types
-- [ ] What's a TypeScript interface?
-- [ ] Why use interfaces instead of just JavaScript objects?
-- [ ] What does `<T>` mean in `ContentItem<T>`?
-- [ ] Why is fields in ContentItem generic?
-- [ ] How do you know what fields are available?
-
-### About Utils
-- [ ] What does buildAuthHeader() do?
-- [ ] What does buildRequestUrlPath() do?
-- [ ] Why check isHttps()?
-- [ ] What do the logging functions do?
-- [ ] When would you use each log level?
+* What does `<T>` mean in `ContentItem<T>`?
+* Why is `fields` in ContentItem generic?
+* What is a `ContentZone` and how does it differ from a `ContentItem`?
+* What does `state: number` in `ContentItemProperties` represent?
 
 ### About Data Flow
-- [ ] How does data flow from Agility server to my app?
-- [ ] Where does parsing happen?
-- [ ] Where does type checking happen?
-- [ ] What happens if API returns unexpected data?
-- [ ] How do you handle missing fields?
+* How does data flow from Agility server to your app?
+* What happens if the API returns unexpected data?
+* How do you handle missing fields gracefully?
+* Why does the SDK return `undefined` instead of throwing on 404?
 
 ---
 
 ## Part 10: Quick Reference - The Most Important Files
 
-### `src/index.ts` - The Front Door
+### `src/index.ts` — The Front Door
+**Purpose:** Single export point. Only exports `getApi`. Everything else is hidden.
 
-**Size:** 28 lines  
-**Purpose:** Export public API  
-**Read time:** 5 minutes
+### `src/api-client.ts` — The Brain
+**Purpose:** Initialize client, provide methods, make HTTP requests.
 
-```typescript
-import { Config } from "./types/Config"
-import { ContentItem } from "./types/ContentItem"
-// ... other imports ...
+Three parts: `getApi()` function → `ApiClient` class with all 10 methods → `makeRequest()` which does the actual HTTP call.
 
-import { ApiClientInstance, getApi } from "./api-client";
+### `src/methods/getContentItem.ts` — The Template Method
+**Purpose:** Fetch a single content item. Understanding this file means understanding all 10 methods — same pattern, different URLs and validations.
 
-export type {
-    ApiClientInstance,
-    Config,
-    ContentItem,
-    // ... other types ...
-}
+### `src/utils.ts` — Shared Utilities
+**Key functions:** `buildRequestUrlPath()` (builds base URL), `buildAuthHeader()` (adds API key to request headers), logging functions.
 
-export {
-    getApi
-}
+### `src/types/Config.ts` — Configuration Shape
+What you pass to `getApi()`.
 
-module.exports = {
-    getApi
-}
-```
+### `src/types/ContentItem.ts` — Data Shape
+What you receive back. The `<T>` generic lets you type your custom `fields`.
 
-**Key takeaway:** Only one thing is exported: `getApi`. Everything else is hidden.
+### `src/types/Page.ts` — Page Structure
+Pages contain `zones`, which contain `ContentItems`. This is the core page model in Agility CMS.
 
 ---
 
-### `src/api-client.ts` - The Brain
+## Part 11: Installation Methods ⭐ NEW
 
-**Size:** ~300 lines  
-**Purpose:** Initialize client, provide methods, make requests  
-**Read time:** 40 minutes
+There are three ways to install and use this SDK depending on your project setup.
 
-**Three main parts:**
+### Method 1: npm (Recommended for most projects)
 
-**Part A: The getApi() function (lines ~135-160)**
-```typescript
-export function getApi(config: Config) {
-    validateConfigParams(config);
-    if (!config.fetchConfig) config.fetchConfig = {}
-    return new ApiClient(config);
-}
+```bash
+npm install @agility/content-fetch
 ```
-Takes config, validates, returns client.
 
-**Part B: The ApiClient class (lines ~80-250)**
 ```typescript
-class ApiClient {
-    config: Config;
-    
-    async getContentItem(params) { ... }
-    async getContentList(params) { ... }
-    async getPage(params) { ... }
-    // ... and 7 more methods
-    
-    async makeRequest(reqConfig) {
-        // Does actual fetch() call
+import agility from '@agility/content-fetch'
+
+const api = agility.getApi({
+    guid: 'your-guid',
+    apiKey: 'your-api-key'
+})
+```
+
+### Method 2: yarn
+
+If your project uses Yarn as its package manager:
+
+```bash
+yarn add @agility/content-fetch
+```
+
+Usage is identical to npm — same import statement, same API. The only difference is how the package is installed and tracked (`yarn.lock` vs `package-lock.json`).
+
+**When to use yarn vs npm:**
+- Use `yarn` if your project already has a `yarn.lock` file
+- Use `npm` if your project already has a `package-lock.json` file
+- Never mix the two in the same project — pick one and stick with it
+
+### Method 3: CDN / Script Tag (Browser only)
+
+If you're not using a bundler (plain HTML/JS without npm), you can load the SDK directly in the browser via a `<script>` tag:
+
+```html
+<!-- Use a specific version (recommended for production) -->
+<script type="text/javascript"
+  src="https://unpkg.com/@agility/content-fetch@0.4.2/dist/agility-content-fetch.browser.js">
+</script>
+
+<!-- Or always use the latest version (easier but less stable) -->
+<script type="text/javascript"
+  src="https://unpkg.com/@agility/content-fetch@latest/dist/agility-content-fetch.browser.js">
+</script>
+```
+
+After loading via script tag, the SDK is accessible as a **global variable** called `agility`:
+
+```javascript
+// No import statement needed!
+const api = agility.getApi({
+    guid: 'your-guid',
+    apiKey: 'your-api-key'
+})
+
+api.getContentItem({ contentID: 22, locale: 'en-us' })
+    .then(function(item) {
+        console.log(item)
+    })
+    .catch(function(error) {
+        console.error(error)
+    })
+```
+
+**When to use the CDN approach:**
+- Prototyping / quick demos
+- Plain HTML projects without a build step
+- Learning the SDK in a browser sandbox (CodePen, JSFiddle, etc.)
+
+**⚠️ Caution:** The CDN approach exposes your API key in the browser's source code. Only use your **live** (read-only) API key this way — never your preview key or management key.
+
+### Choosing the Right Installation
+
+| Scenario | Method |
+|---|---|
+| Next.js, Remix, Gatsby, Vite | npm or yarn |
+| Create React App | npm or yarn |
+| Plain HTML + no bundler | CDN / script tag |
+| Prototyping in CodeSandbox | CDN / script tag |
+
+---
+
+## Part 12: Contributing to the SDK ⭐ NEW
+
+The Agility Content Fetch JS SDK is open source (MIT license). That means you can read the code, report issues, and even contribute fixes or improvements.
+
+### How to Contribute
+
+1. **Fork the repository** on GitHub at https://github.com/agility/agility-content-fetch-js-sdk
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/agility-content-fetch-js-sdk.git
+   cd agility-content-fetch-js-sdk
+   ```
+3. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+4. **Create a branch** for your change:
+   ```bash
+   git checkout -b fix/my-bug-fix
+   ```
+5. **Make your changes** and add/update tests
+6. **Run the test suite** to verify nothing is broken:
+   ```bash
+   npm run test
+   ```
+7. **Submit a Pull Request** on GitHub with a clear description of what you changed and why
+
+### Running the Tests
+
+Unit tests are a critical part of this SDK. Before any code merges, tests must pass. To run them:
+
+```bash
+npm run test
+```
+
+The test suite uses **Jest** (configured in `jest.config.js`) and **Mocha/Chai** for some older tests. Tests live in the `test/` folder and are organized by method:
+
+```
+test/
+├── getContentItem.tests.js
+├── getContentList.tests.js
+├── getPage.tests.js
+├── getUrlRedirections.tests.js
+└── ... (one file per method)
+```
+
+**Why you should look at the tests even if you're not contributing:**
+
+Reading tests is one of the fastest ways to understand how code is meant to be used. Each test file shows: what inputs are valid, what outputs are expected, and what edge cases matter.
+
+### Reporting Issues
+
+Found a bug? Open an issue at https://github.com/agility/agility-content-fetch-js-sdk/issues
+
+When filing an issue, include:
+- The SDK version you're using (`npm list @agility/content-fetch`)
+- A minimal code example that reproduces the problem
+- The expected vs. actual behavior
+
+### License
+
+The SDK is published under the **MIT License**, which means you can freely use it in personal and commercial projects, modify the code, and redistribute it — as long as you include the original license notice.
+
+---
+
+## Part 13: Content Webhooks ⭐ NEW
+
+Webhooks let Agility CMS notify your application automatically whenever content is published or updated. This is what powers real-time content updates without you having to poll the API repeatedly.
+
+### How Webhooks Work
+
+```
+Content Editor publishes in Agility CMS
+           │
+           ▼
+Agility CMS sends HTTP POST to your webhook URL
+           │
+           ▼
+Your app receives the notification
+           │
+           ▼
+Your app re-fetches or revalidates affected content
+           │
+           ▼
+Users see updated content
+```
+
+### Setting Up a Webhook in Next.js
+
+A common pattern is to create a `/api/revalidate` endpoint in Next.js that Agility calls whenever content changes:
+
+```typescript
+// pages/api/revalidate.ts (Next.js Pages Router)
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    // Validate the webhook came from Agility
+    const token = req.headers['x-agility-webhook-token']
+    if (token !== process.env.AGILITY_WEBHOOK_SECRET) {
+        return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    // Get the content that changed
+    const { contentID, languageCode } = req.body
+
+    try {
+        // Revalidate the specific page(s) affected
+        await res.revalidate(`/blog/${contentID}`)
+        await res.revalidate('/')  // Also revalidate homepage if it shows recent posts
+        return res.json({ revalidated: true })
+    } catch (error) {
+        return res.status(500).json({ message: 'Error revalidating' })
     }
 }
 ```
-Stores config, provides all methods.
 
-**Part C: The makeRequest() method (lines ~200-250)**
-```typescript
-async makeRequest(reqConfig: RequestParams) {
-    const fullUrl = `${reqConfig.baseURL}${reqConfig.url}`
-    
-    const init = {
-        method: "GET",
-        headers: { ...reqConfig.headers },
-    }
-    
-    const response = await fetch(fullUrl, init)
-    let data = await response.json()
-    return data
-}
-```
-Does the actual HTTP request using fetch API.
+### What Events Can Trigger a Webhook?
 
-**Key takeaway:** ApiClient is the main class. Every method delegates to methods/ folder, which calls makeRequest().
+Agility CMS can send webhooks for:
+- **Publish events** — when content is published live
+- **Save events** — when content is saved (even unpublished drafts)
+- **Workflow events** — when content moves through an approval workflow
+
+### Where to Configure Webhooks
+
+Webhooks are configured inside your Agility CMS instance settings, not in the SDK. You provide:
+1. The URL Agility should POST to (your endpoint)
+2. Which events should trigger it (publish, save, workflow)
+3. A secret token for verification (optional but recommended)
+
+See the official guide: https://help.agilitycms.com/hc/en-us/articles/360035934911
 
 ---
 
-### `src/methods/getContentItem.ts` - Example Method
+## Part 14: Official Tutorials & Resources ⭐ NEW
 
-**Size:** 79 lines  
-**Purpose:** Fetch single content item  
-**Read time:** 10 minutes
+These are the official learning resources from Agility CMS. Use these alongside this guide.
 
-**Pattern to understand:**
-```typescript
-// 1. Interface for parameters
-export interface ContentItemRequestParams {
-    contentID: number;
-    locale?: string;
-    contentLinkDepth?: number;
-    expandAllContentLinks?: boolean;
-}
+### Tutorials (from the official README)
 
-// 2. Function
-function getContentItem(this: ApiClientInstance, requestParams) {
-    // Validate
-    // Apply defaults
-    // Build request
-    // Call makeRequest()
-}
+| Title | What You'll Learn |
+|---|---|
+| [About the Content Fetch API](https://help.agilitycms.com/hc/en-us/articles/360031985112) | High-level overview of the Fetch API and when to use it |
+| [Authenticating your Content Fetch API Calls](https://help.agilitycms.com/hc/en-us/articles/360032225191) | How guid and apiKey work, live vs. preview keys |
+| [Retrieving your API Key(s), Guid, and API URL](https://help.agilitycms.com/hc/en-us/articles/360031919212) | Step-by-step: finding your credentials in the Agility CMS dashboard |
+| [Making your First Call with the Content Fetch API](https://help.agilitycms.com/hc/en-us/articles/360031918152) | Your first working API request |
+| [Calling the Content Fetch API using the JS SDK](https://help.agilitycms.com/hc/en-us/articles/360031945912) | SDK-specific walkthrough |
+| [Page Management in a Headless CMS](https://help.agilitycms.com/hc/en-us/articles/360032554331) | How pages, zones, and modules work together |
+| [Using Agility CMS with Create React App](https://help.agilitycms.com/hc/en-us/articles/360031121692) | Build a CRA app with Agility content |
+| [Creating a Module for the Agility CMS CRA](https://help.agilitycms.com/hc/en-us/articles/360031590791) | How to build reusable content modules |
+| [Creating a Page Template for the CRA](https://help.agilitycms.com/hc/en-us/articles/360032611011) | How page templates work |
+| [Deploying your Agility CMS Create React App](https://help.agilitycms.com/hc/en-us/articles/360032203552) | Deploying to production |
+| [Content Webhooks](https://help.agilitycms.com/hc/en-us/articles/360035934911) | Setting up real-time content notifications |
 
-// 3. Validation
-function validateRequestParams(requestParams) {
-    if (!requestParams.contentID) {
-        throw new TypeError('...');
-    }
-}
+### Recommended Learning Order for Beginners
 
-// 4. Export
-export default getContentItem;
-```
+1. Start with **"About the Content Fetch API"** — understand the big picture
+2. Then **"Authenticating your Content Fetch API Calls"** — get your credentials
+3. Then **"Making your First Call"** — get something working
+4. Then **"Using the JS SDK"** — switch from raw fetch to this SDK
+5. Then **"Page Management in a Headless CMS"** — understand zones/modules
+6. Finally pick the framework tutorial that matches your project (React, Next.js, etc.)
 
-**Key takeaway:** Understand this file = understand all 10 methods. Same pattern, just different URLs and validations.
+### Official Package Links
 
----
-
-### `src/utils.ts` - Helper Functions
-
-**Size:** 122 lines  
-**Purpose:** Shared utilities  
-**Read time:** 15 minutes
-
-**Key functions:**
-
-```typescript
-// Builds base URL path
-buildRequestUrlPath(config, locale)
-// Returns: https://api.agilitycms.com/fetch/en-us
-// Or:      https://api.agilitycms.com/preview/en-us
-
-// Builds authentication headers
-buildAuthHeader(config)
-// Returns: { APIKey: '...', Guid: '...' }
-
-// Builds query string
-buildPathUrl(contentType, referenceName, skip, take, ...)
-// Returns: /contentlist/blog_posts?take=10&skip=0&...
-
-// Logging functions
-logDebug({ config, message })
-logInfo({ config, message })
-logWarning({ config, message })
-logError({ config, message })
-```
-
-**Key takeaway:** These functions are used by every method to construct URLs and headers.
+| Resource | URL |
+|---|---|
+| GitHub Repository | https://github.com/agility/agility-content-fetch-js-sdk |
+| npm Package | https://www.npmjs.com/package/@agility/content-fetch |
+| Agility CMS Help Center | https://help.agilitycms.com/hc/en-us |
+| Free Trial Sign-up | https://agilitycms.com/free |
 
 ---
 
-### `src/types/Config.ts` - Configuration
+## Part 15: SDK Versioning & Releases ⭐ NEW
 
-**Size:** 48 lines  
-**Purpose:** Define configuration shape  
-**Read time:** 10 minutes
+### Current Version
 
-```typescript
-export interface Config {
-    guid?: string;
-    apiKey?: string;
-    baseUrl?: string;
-    isPreview?: boolean;
-    locale?: string;
-    headers?: { [key: string]: string };
-    logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent';
-    caching?: { maxAge?: number };
-    // ... more fields
-}
+The SDK follows [Semantic Versioning](https://semver.org/) (semver): `MAJOR.MINOR.PATCH`
+
+- **MAJOR** — Breaking changes (rare). Existing code may need updates.
+- **MINOR** — New features added in a backwards-compatible way.
+- **PATCH** — Bug fixes only. Safe to update without any code changes.
+
+As of early 2026, the SDK is at **v2.x**. You can see all releases at https://github.com/agility/agility-content-fetch-js-sdk/releases
+
+### How to Check Your Installed Version
+
+```bash
+npm list @agility/content-fetch
+# or
+cat node_modules/@agility/content-fetch/package.json | grep '"version"'
 ```
 
-**Key takeaway:** This defines what configuration options are available when you call getApi().
+### How to Update
 
----
+```bash
+# Update to latest
+npm install @agility/content-fetch@latest
 
-### `src/types/ContentItem.ts` - Data Shape
-
-**Size:** 29 lines  
-**Purpose:** Define content item structure  
-**Read time:** 5 minutes
-
-```typescript
-export interface ContentItem<T = { [key: string]: any }> {
-    contentID: number;
-    properties: ContentItemProperties;
-    fields: T;
-    seo?: SEOProperties;
-}
+# Update to a specific version
+npm install @agility/content-fetch@2.0.10
 ```
 
-**Key takeaway:** This shows what data looks like when you fetch a content item. The `<T>` generic lets you type your custom fields.
+### Notable Version History
 
----
+- **v2.x** — Current stable branch. Uses native `fetch()` API (built into modern Node.js 18+). Added East US region support in v2.0.10.
+- **v1.x** — Used `axios` as the HTTP client (you may see references to this in older tutorials or the package.json `dependencies` field).
 
-### `src/types/Page.ts` - Page Structure
+> 💡 **Why does this matter?** If you read code examples online that mention `axios` in the context of this SDK, they were written for v1.x. The v2.x SDK replaced axios with the native `fetch()` API for smaller bundle size and better compatibility with modern runtimes like Node 18+, Deno, and edge functions.
 
-**Size:** 62 lines  
-**Purpose:** Define page structure  
-**Read time:** 10 minutes
+### Staying Up to Date
 
-```typescript
-export interface Page {
-    pageID: number;
-    name: string;
-    path: string;
-    title: string;
-    zones: { [key: string]: ContentZone[] };  // KEY CONCEPT
-    properties: SystemProperties;
-    // ... more fields
-}
-```
-
-**Key takeaway:** Pages contain zones, which contain content. This is how pages are structured in Agility.
+The SDK repository uses GitHub Actions for CI/CD. You can watch the repo on GitHub to get notified of new releases. It is generally safe to update to new PATCH and MINOR versions without changing your code.
 
 ---
 
 ## Summary: The Big Picture
 
 ### What is the SDK?
-A JavaScript library that makes it easy to fetch content from Agility CMS.
+
+A JavaScript/TypeScript library that makes it easy to read content from Agility CMS. It works in both Node.js and browser environments, can be installed via npm, yarn, or a CDN script tag, and is fully open source under the MIT license.
 
 ### How does it work?
 
-1. **Initialize:** `const api = agility.getApi({ guid, apiKey })`
-2. **Call methods:** `api.getContentItem({ contentID, locale })`
-3. **Method does:**
-   - Validate parameters
-   - Build HTTP request
-   - Call makeRequest()
-4. **makeRequest() does:**
-   - Uses fetch() API
-   - Calls Agility servers
-   - Parses response
-   - Returns typed data
-5. **You get:** Promise with typed data (ContentItem, Page, etc.)
+1. **Install:** `npm install @agility/content-fetch`
+2. **Initialize:** `const api = agility.getApi({ guid, apiKey })`
+3. **Call methods:** `api.getContentItem({ contentID, locale })`
+4. **Methods do:** Validate → build URL → call makeRequest()
+5. **makeRequest() does:** HTTP GET → parse JSON → return typed data
+6. **You get:** A Promise with typed data (ContentItem, Page, etc.)
+7. **Webhooks (optional):** Agility POSTs to your endpoint when content changes → you revalidate
 
 ### Directory Structure
 
 ```
 src/
-├── index.ts              ← Entry point
+├── index.ts              ← Entry point (exports getApi only)
 ├── api-client.ts         ← Main client class
 ├── utils.ts              ← Helper functions
-├── methods/              ← 10 methods for different requests
-│   ├── getContentItem.ts (understand this = understand all)
-│   ├── getPage.ts
-│   ├── getContentList.ts (more complex)
-│   └── ... 7 more ...
+├── methods/              ← 10 methods (understand one = understand all)
 └── types/                ← TypeScript definitions
-    ├── Config.ts         (what to pass to getApi)
-    ├── ContentItem.ts    (what you get back)
-    ├── Page.ts           (page structure with zones)
-    └── ... 12 more ...
+.github/workflows/        ← CI/CD pipelines (auto-test on every push)
+test/                     ← Unit tests (one file per method)
 ```
 
-### Key Files in Order
+### Key Files in Order (50 minutes to 80% understanding)
 
-**To understand 80% of the code:**
 1. `src/index.ts` (5 min)
 2. `src/api-client.ts` (20 min)
 3. `src/methods/getContentItem.ts` (10 min)
 4. `src/types/Config.ts` (10 min)
 5. `src/types/ContentItem.ts` (5 min)
 
-**Total: 50 minutes**
-
-### Common Patterns
-
-1. **All methods validate first** - fail fast
-2. **All methods build URLs the same way** - understand once, apply everywhere
-3. **All methods return Promises** - use async/await
-4. **Configuration is set once** - stored in instance
-5. **Error handling is gentle** - 404s return undefined, others log
-
 ### Learning Timeline
 
-- **Days 1-2:** Foundation (what is SDK?)
-- **Days 3-4:** Core files (how does it work?)
-- **Days 5-7:** Methods (what can I do?)
-- **Days 8-9:** Types (what data comes back?)
-- **Days 10+:** Practice (build something!)
+| Phase | Days | Focus |
+|---|---|---|
+| Foundation | 1-2 | What is the SDK? How does headless CMS work? |
+| Core Files | 3-4 | `index.ts`, `api-client.ts`, `utils.ts` |
+| Methods | 5-7 | All 10 methods, filtering, pagination |
+| Types | 8-9 | TypeScript generics, ContentItem, Page, zones |
+| Practice | 10+ | Build something real! |
 
-**Total time:** 10-14 days at 1-2 hours/day
+### Final Tips
 
-### What You Should Know After Reading This Guide
-
-- ✅ What the SDK does and why it exists
-- ✅ How it's organized
-- ✅ The main entry point (getApi)
-- ✅ How methods work
-- ✅ What each main file does
-- ✅ How data flows
-- ✅ What types are available
-- ✅ How to use it in your app
+1. **Start simple** — Get a single item before filtering lists
+2. **Use TypeScript** — Get autocompletion and type safety
+3. **Log everything initially** — Set `logLevel: 'debug'` while learning
+4. **Read the tests** — `test/` folder shows exactly how each method is meant to behave
+5. **Use async/await** — Cleaner than `.then()`/`.catch()`
+6. **Check for undefined** — API methods return `undefined` on 404, always guard against this
+7. **Cache when appropriate** — Improves SSR performance
+8. **Use environment variables** — Never hardcode guid/apiKey in source code
+9. **Try preview mode** — Essential for content editing workflows
+10. **Follow webhooks for live updates** — Avoid polling the API
 
 ---
 
 ## Additional Resources
 
-### Official Documentation
-- [Agility CMS Official Site](https://agilitycms.com)
-- [GitHub Repository](https://github.com/agility/agility-content-fetch-js-sdk)
-- [NPM Package](https://www.npmjs.com/package/@agility/content-fetch)
-- [Agility Documentation](https://help.agilitycms.com/hc/en-us)
-
-### Related Topics to Learn
-- REST APIs and HTTP requests
-- TypeScript basics and generics
-- Promises and async/await
-- Headless CMS concepts
-
-### Community
-- GitHub Issues: Report bugs or ask questions
-- Agility Support: Official support channel
+| Resource | URL |
+|---|---|
+| GitHub Repository | https://github.com/agility/agility-content-fetch-js-sdk |
+| npm Package | https://www.npmjs.com/package/@agility/content-fetch |
+| Agility CMS | https://agilitycms.com |
+| Agility Help Center | https://help.agilitycms.com/hc/en-us |
+| Free Trial | https://agilitycms.com/free |
+| SDK Reference Docs | https://agilitydocs.netlify.app/agility-content-fetch-js-sdk/ |
+| Content Webhooks Guide | https://help.agilitycms.com/hc/en-us/articles/360035934911 |
 
 ---
 
 ## Glossary of Terms
 
-**API** - Application Programming Interface. Software that lets apps communicate.
+**API** — Application Programming Interface. Software that lets apps communicate.
 
-**Fetch API** - Agility's read-only API for getting content. (Not write/modify)
+**Axios** — An HTTP client library used in SDK v1.x. Replaced by native `fetch()` in v2.x.
 
-**Headless CMS** - Content management system without a "head" (frontend). Your app is the head.
+**CDN** — Content Delivery Network. Servers distributed globally to serve files fast.
 
-**Content Item** - A single piece of content (blog post, product, person, etc.)
+**CI/CD** — Continuous Integration / Continuous Deployment. Automated pipelines that run tests and deploy code automatically.
 
-**Content Type** - Definition of what fields a content item has (like a blueprint)
+**Content Item** — A single piece of content (blog post, product, person, etc.)
 
-**Content Reference** - A link to another piece of content
+**Content Type** — Definition of what fields a content item has (like a blueprint)
 
-**Content Zone** - Area on a page where content is placed
+**Content Reference** — A link from one content item to another
 
-**Page** - Web page made up of zones
+**Content Zone** — Area on a page where content modules are placed
 
-**Locale** - Language and region code (en-us, fr-ca, etc.)
+**Fetch API** — Agility's read-only API for getting content. (Not write/modify)
 
-**Sitemap** - List of all pages/URLs on the site
+**Fork** — A personal copy of an open source repository on GitHub, used for contributing.
 
-**Sync** - Keeping your app's data in sync with Agility
+**Generic** — Template parameter in TypeScript (like `<T>`)
 
-**TypeScript** - JavaScript with type safety
+**Headless CMS** — Content management system without a built-in frontend. Your app provides the "head."
 
-**Interface** - TypeScript definition of an object's shape
+**HTTP Request** — Message sent to a web server (GET, POST, etc.)
 
-**Generic** - Template parameter in TypeScript (like `<T>`)
+**Interface** — TypeScript definition of an object's shape
 
-**Promise** - JavaScript object that represents eventual completion of async operation
+**Locale** — Language and region code (en-us, fr-ca, etc.)
 
-**async/await** - Modern way to work with Promises
+**MIT License** — Open source license allowing free commercial use, modification, and distribution.
 
-**HTTP Request** - Message sent to a web server (GET, POST, etc.)
+**npm** — Node Package Manager. The most common way to install JavaScript packages.
 
-**Headers** - Metadata included with HTTP requests
+**Page** — Web page made up of zones containing modules
 
-**Query String** - Parameters in URL after `?` (e.g., `?id=22&name=test`)
+**Preview Mode** — A special mode that shows unpublished/draft content
 
-**Method** - Function available on an object (like `api.getContentItem()`)
+**Promise** — JavaScript object representing eventual completion of an async operation
+
+**Pull Request (PR)** — A request to merge your changes into a project on GitHub
+
+**Semver** — Semantic Versioning. A version numbering convention: MAJOR.MINOR.PATCH
+
+**Sitemap** — List of all pages/URLs on the site
+
+**Sync** — Keeping your app's data in sync with Agility (see `@agility/content-sync`)
+
+**TypeScript** — JavaScript with type safety
+
+**Webhook** — An HTTP callback that notifies your app when something happens in the CMS
+
+**yarn** — An alternative to npm for installing JavaScript packages
 
 ---
 
 ## FAQ
 
-### Q: How long does it take to learn this SDK?
-A: For a beginner, 10-14 days of 1-2 hours per day. For someone familiar with APIs, 3-5 days.
+**Q: How long does it take to learn this SDK?**
+A: 10-14 days at 1-2 hours/day for a complete beginner. 3-5 days if you're already familiar with REST APIs.
 
-### Q: Do I need to know TypeScript?
-A: No, but it helps. You can use it with JavaScript too.
+**Q: Do I need to know TypeScript?**
+A: No — you can use it with plain JavaScript. But TypeScript gives you autocomplete and type safety, which makes learning much easier.
 
-### Q: What's the difference between getContentItem and getPage?
-A: ContentItem is a standalone piece of content. Page is a web page that may contain multiple ContentItems in zones.
+**Q: Should I use npm or yarn?**
+A: Either works. Use whichever your project already uses. Don't mix them.
 
-### Q: Can I use this in the browser?
-A: Yes! It works in both Node.js and browser environments.
+**Q: What's the difference between getContentItem and getPage?**
+A: A ContentItem is a standalone piece of content. A Page is a web page that contains multiple content items arranged in zones.
 
-### Q: Is caching recommended?
-A: Yes, for better performance. Set `maxAge: 180000` (3 minutes) to start.
+**Q: Can I use this in the browser?**
+A: Yes! Works in both Node.js and browser environments. For browser without a bundler, use the CDN / script tag method.
 
-### Q: What if my API key leaks?
-A: In production, use environment variables and never commit keys to git.
+**Q: Is caching recommended?**
+A: Yes for SSR apps. Start with `maxAge: 180000` (3 minutes). Disable it during development.
 
-### Q: How do I handle pagination?
-A: Use `take` and `skip` parameters in getContentList.
+**Q: What's the difference between v1.x and v2.x?**
+A: v1.x used `axios` as the HTTP client. v2.x uses the native `fetch()` API, which is built into Node.js 18+ and all modern browsers. The API surface (how you use it) is essentially the same.
 
-### Q: Can I filter content?
-A: Yes, using the `filters` parameter in getContentList.
+**Q: What if my API key leaks?**
+A: Rotate it immediately in your Agility CMS dashboard. Always use environment variables and never commit keys to git.
 
-### Q: What if content doesn't exist?
-A: SDK returns `undefined` for 404 responses.
+**Q: How do I know what content fields are available?**
+A: Check your Agility CMS instance's content model definitions, or use TypeScript generics to type the `fields` object.
 
-### Q: How do I know what fields are available?
-A: Check Agility CMS instance or use TypeScript generics to type them.
+**Q: Can I contribute to this SDK?**
+A: Yes! Fork the repo, make changes, run tests (`npm run test`), and open a Pull Request.
 
----
-
-## Final Tips
-
-1. **Start simple** - Get a single item before filtering lists
-2. **Use TypeScript** - Get autocompletion and type safety
-3. **Log everything initially** - Understand data flow
-4. **Read error messages carefully** - They tell you exactly what's wrong
-5. **Check the types** - They document what's available
-6. **Use async/await** - Cleaner than .then()/.catch()
-7. **Cache when appropriate** - Improves performance
-8. **Validate user input** - Before sending to API
-9. **Handle errors gracefully** - Log, show user-friendly message
-10. **Read the official docs** - This guide is supplementary
+**Q: What happens when content changes in Agility CMS?**
+A: By default, nothing until your next API call or server restart. To get real-time updates, set up a Content Webhook that triggers revalidation in your app.
 
 ---
 
-**Last Updated:** 2026-03-04  
-**Guide Version:** 1.0  
-**Created by:** GitHub Copilot
+**Last Updated:** 2026-03-04
+**Guide Version:** 2.0
 
 **Happy Learning! 🚀**
